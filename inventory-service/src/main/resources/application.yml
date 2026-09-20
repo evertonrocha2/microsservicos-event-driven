@@ -1,0 +1,39 @@
+server:
+  port: 9083
+
+spring:
+  application:
+    name: inventory-service
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://127.0.0.1:5433/inventory_db}
+    username: tp3
+    password: tp3
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: 5672
+    username: tp3
+    password: tp3
+    listener:
+      simple:
+        acknowledge-mode: manual
+        prefetch: 1
+        # concurrency > 1 aqui daria ganho de vazao, mas quebraria a ordem entre
+        # reservar e liberar o mesmo pedido. A fila usa consumidor unico ativo
+        # justamente para evitar isso. Ver RabbitMQConfig e MessageSequenceGuard.
+        concurrency: 1
+        max-concurrency: 1
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    br.edu.tp3: DEBUG
