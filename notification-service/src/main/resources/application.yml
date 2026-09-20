@@ -1,0 +1,33 @@
+server:
+  port: 9084
+
+spring:
+  application:
+    name: notification-service
+
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: 5672
+    username: tp3
+    password: tp3
+    listener:
+      simple:
+        acknowledge-mode: manual
+        prefetch: 10
+        concurrency: 2
+        max-concurrency: 5
+
+tp3:
+  # Base da chamada SINCRONA para o order-service (exemplo de acoplamento temporal)
+  order-service:
+    base-url: ${ORDERSERVICE_BASEURL:http://127.0.0.1:9081}
+    connect-timeout-ms: 2000
+    read-timeout-ms: 3000
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    br.edu.tp3: DEBUG
