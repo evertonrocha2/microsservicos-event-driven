@@ -1,0 +1,46 @@
+server:
+  port: 9081
+
+spring:
+  application:
+    name: order-service
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://127.0.0.1:5433/order_db}
+    username: tp3
+    password: tp3
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate.format_sql: true
+    open-in-view: false
+
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: 5672
+    username: tp3
+    password: tp3
+    listener:
+      simple:
+        # ACK manual: a mensagem so sai da fila quando o codigo confirma.
+        # Com ACK automatico, uma falha no meio do processamento perderia a mensagem.
+        acknowledge-mode: manual
+        prefetch: 1
+        concurrency: 1
+        max-concurrency: 1
+
+# Intervalo do publicador do Outbox (padrao Polling Publisher)
+tp3:
+  outbox:
+    poll-interval-ms: 1000
+    batch-size: 50
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    br.edu.tp3: DEBUG
