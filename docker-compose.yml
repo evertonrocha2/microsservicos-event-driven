@@ -1,0 +1,104 @@
+services:
+
+  # ---------------------------------------------------------------
+  # MESSAGE BROKER - RabbitMQ com plugin de gerenciamento
+  # UI: http://localhost:15672  (usuario: tp3 / senha: tp3)
+  # ---------------------------------------------------------------
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: tp3-rabbitmq
+    hostname: tp3-rabbitmq
+    ports:
+      - "5672:5672"     # protocolo AMQP 0-9-1
+      - "15672:15672"   # console de gerenciamento
+    environment:
+      RABBITMQ_DEFAULT_USER: tp3
+      RABBITMQ_DEFAULT_PASS: tp3
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ---------------------------------------------------------------
+  # BANCO DE DADOS - um database por microsservico (database per service)
+  # ---------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: tp3-postgres
+    ports:
+      # 5433 no host para nao conflitar com um Postgres local ja instalado.
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: tp3
+      POSTGRES_PASSWORD: tp3
+      POSTGRES_DB: postgres
+    volumes:
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tp3"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ---------------------------------------------------------------
+  # MICROSSERVICOS (perfil "apps": docker compose --profile apps up)
+  # ---------------------------------------------------------------
+  order-service:
+    profiles: ["apps"]
+    build:
+      context: .
+      dockerfile: order-service/Dockerfile
+    container_name: tp3-order-service
+    ports: ["9081:9081"]
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+      postgres: { condition: service_healthy }
+    environment:
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/order_db
+
+  payment-service:
+    profiles: ["apps"]
+    build:
+      context: .
+      dockerfile: payment-service/Dockerfile
+    container_name: tp3-payment-service
+    ports: ["9082:9082"]
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+      postgres: { condition: service_healthy }
+    environment:
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/payment_db
+
+  inventory-service:
+    profiles: ["apps"]
+    build:
+      context: .
+      dockerfile: inventory-service/Dockerfile
+    container_name: tp3-inventory-service
+    ports: ["9083:9083"]
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+      postgres: { condition: service_healthy }
+    environment:
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/inventory_db
+
+  notification-service:
+    profiles: ["apps"]
+    build:
+      context: .
+      dockerfile: notification-service/Dockerfile
+    container_name: tp3-notification-service
+    ports: ["9084:9084"]
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+    environment:
+      SPRING_RABBITMQ_HOST: rabbitmq
+      ORDERSERVICE_BASEURL: http://order-service:9081
+
+volumes:
+  pgdata:
