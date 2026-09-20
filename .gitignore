@@ -7,3 +7,7 @@ target/
 
 # Material de estudo, nao versionado
 docs/
+
+# Local PDF exports
+*.PDF
+*.pdf
