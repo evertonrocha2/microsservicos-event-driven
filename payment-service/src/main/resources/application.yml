@@ -1,0 +1,42 @@
+server:
+  port: 9082
+
+spring:
+  application:
+    name: payment-service
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://127.0.0.1:5433/payment_db}
+    username: tp3
+    password: tp3
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: 5672
+    username: tp3
+    password: tp3
+    listener:
+      simple:
+        acknowledge-mode: manual
+        prefetch: 1
+        concurrency: 1
+        max-concurrency: 3
+
+tp3:
+  payment:
+    # Regra de negocio simulada: acima deste valor o pagamento e recusado.
+    # Serve para disparar a compensacao da saga na demonstracao.
+    decline-above: 10000.00
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    br.edu.tp3: DEBUG
